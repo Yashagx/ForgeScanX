@@ -1,0 +1,35 @@
+# Ignore dataset folders
+data/raw/
+data/preprocessed/
+data/results/
+
+# Ignore image files anywhere
+*.jpg
+*.jpeg
+*.png
+*.bmp
+
+# Ignore logs and caches
+logs/
+*.log
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Python environment or packages
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+tf-env/
+venv/
+*.env
+
+# Output & temp files
+*.out
+*.tmp
+.DS_Store
+
+# VSCode & system files
+.vscode/
+*.swp
