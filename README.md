@@ -21,8 +21,9 @@ The project **does not use segmentation** masks. Instead, it overlays red dots (
 
 ---
 
-## 📂 Project Structure
+- ## 📁 Project Structure
 
+~~~
 ForgeScanX/
 │
 ├── models/
@@ -42,10 +43,7 @@ ForgeScanX/
 │
 ├── main.py # FastAPI backend
 └── README.md
-
-yaml
-Copy
-Edit
+~~~
 
 ---
 
