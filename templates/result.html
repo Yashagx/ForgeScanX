@@ -803,7 +803,7 @@
             regions: {{ region_areas | tojson if region_areas else [] }}
         };
 
-        // Classification Chart
+       // Classification Chart
         const classCtx = document.getElementById('classificationChart').getContext('2d');
         new Chart(classCtx, {
             type: 'doughnut',
@@ -814,6 +814,34 @@
                     backgroundColor: ['#ef4444', '#10b981'],
                     borderWidth: 2,
                     borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Timing Chart
+        const timingCtx = document.getElementById('timingChart').getContext('2d');
+        new Chart(timingCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Classification', 'Segmentation', 'Post-process', 'Copy-Move'],
+                datasets: [{
+                    data: [
+                        chartData.timing.classification,
+                        chartData.timing.segmentation,
+                        chartData.timing.post_processing,
+                        chartData.timing.copy_move
+                    ],
+                    backgroundColor: ['#ef4444', '#06b6d4', '#8b5cf6', '#10b981'],
+                    borderRadius: 4
                 }]
             },
             options: {
@@ -938,32 +966,4 @@
         });
     </script>
 </body>
-</html>,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-
-        // Timing Chart
-        const timingCtx = document.getElementById('timingChart').getContext('2d');
-        new Chart(timingCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Classification', 'Segmentation', 'Post-process', 'Copy-Move'],
-                datasets: [{
-                    data: [
-                        chartData.timing.classification,
-                        chartData.timing.segmentation,
-                        chartData.timing.post_processing,
-                        chartData.timing.copy_move
-                    ],
-                    backgroundColor: ['#ef4444', '#06b6d4', '#8b5cf6', '#10b981'],
-                    borderRadius: 4
-                }]
-            },
-            options: {
-                responsive: true
+</html>
