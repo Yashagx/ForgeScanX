@@ -23,6 +23,33 @@ warnings.filterwarnings('ignore')
 # Ensure your UNet model definition is correctly imported.
 from models.segmentation.unet import UNet
 
+# === Custom JSON Encoder for NumPy types ===
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NumpyEncoder, self).default(obj)
+
+# Helper function to convert numpy types to native Python types
+def convert_numpy_types(obj):
+    """Recursively convert numpy types to native Python types"""
+    if isinstance(obj, dict):
+        return {key: convert_numpy_types(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_numpy_types(item) for item in obj]
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    else:
+        return obj
+
 # === Paths ===
 classification_model_path = "models/classification/classification_model.pth"
 segmentation_model_path = "models/segmentation/best_segmentation_model.pth"
@@ -88,32 +115,33 @@ class ForgeryAnalytics:
         self.texture_stats = {}
         
     def log_timing(self, phase, duration):
-        setattr(self, f"{phase}_time", duration)
+        setattr(self, f"{phase}_time", float(duration))
     
     def log_classification(self, probabilities, confidence):
-        self.classification_probabilities = probabilities.tolist()
-        self.classification_confidence = confidence
+        self.classification_probabilities = [float(p) for p in probabilities.tolist()]
+        self.classification_confidence = float(confidence)
     
     def log_segmentation(self, mask, confidence_scores=None):
-        self.segmentation_confidence = np.mean(confidence_scores) if confidence_scores is not None else 0
-        self.total_forged_pixels = np.sum(mask > 127)
+        self.segmentation_confidence = float(np.mean(confidence_scores)) if confidence_scores is not None else 0.0
+        self.total_forged_pixels = int(np.sum(mask > 127))  # Convert to int
         total_pixels = mask.shape[0] * mask.shape[1]
-        self.forged_percentage = (self.total_forged_pixels / total_pixels) * 100
+        self.forged_percentage = float((self.total_forged_pixels / total_pixels) * 100)  # Convert to float
         
-        # Mask statistics
+        # Mask statistics - ensure all are native Python types
         self.mask_statistics = {
             'mean_intensity': float(np.mean(mask)),
             'std_intensity': float(np.std(mask)),
             'max_intensity': float(np.max(mask)),
             'min_intensity': float(np.min(mask)),
-            'unique_values': len(np.unique(mask))
+            'unique_values': int(len(np.unique(mask)))
         }
     
     def log_regions(self, bboxes, region_scores=None):
         self.detected_regions = len(bboxes)
-        self.region_areas = [w * h for x, y, w, h in bboxes]
+        # Convert numpy types to native Python types
+        self.region_areas = [int(w * h) for x, y, w, h in bboxes]  # Ensure int type
         if region_scores:
-            self.region_confidences = region_scores
+            self.region_confidences = [float(score) for score in region_scores]  # Ensure float type
     
     def log_forensic_features(self, ela_img, noise_img, gradient_img, texture_img):
         if ela_img is not None:
@@ -150,7 +178,7 @@ class ForgeryAnalytics:
     
     def get_summary(self):
         total_time = time.time() - self.start_time
-        return {
+        summary = {
             'timing': {
                 'total_processing_time': round(total_time, 3),
                 'classification_time': round(self.classification_time, 3),
@@ -180,11 +208,14 @@ class ForgeryAnalytics:
                 'texture_stats': self.texture_stats
             }
         }
+        
+        # Convert all numpy types to native Python types
+        return convert_numpy_types(summary)
 
 # Global analytics instance
 analytics = ForgeryAnalytics()
 
-# === Advanced Forensic Feature Extraction (Fixed) ===
+# === Advanced Forensic Feature Extraction ===
 def compute_ela(image_path, quality=90):
     """Enhanced ELA computation with analytics"""
     try:
@@ -450,7 +481,7 @@ def adaptive_threshold(prob_mask, method='otsu_multi'):
         return (adaptive_mask > 0).astype(np.uint8), (adaptive_mask > 0).astype(np.uint8)
 
 def enhanced_post_process_mask(prob_mask, original_size, min_area=500):
-    """Enhanced post-processing with analytics - FIXED"""
+    """Enhanced post-processing with analytics"""
     start_time = time.time()
     
     print(f"Post-processing mask - Shape: {prob_mask.shape}, Min: {prob_mask.min():.3f}, Max: {prob_mask.max():.3f}")
@@ -483,7 +514,7 @@ def enhanced_post_process_mask(prob_mask, original_size, min_area=500):
     # Apply final cleaning
     final_mask = cv2.medianBlur(final_mask, 3)
     
-    # FIXED: Resize to original size correctly
+    # Resize to original size correctly
     final_mask_resized = cv2.resize(final_mask, original_size, interpolation=cv2.INTER_NEAREST)
     
     # Connected component analysis with relaxed criteria
@@ -504,19 +535,19 @@ def enhanced_post_process_mask(prob_mask, original_size, min_area=500):
         
         aspect_ratio = w / h if h > 0 else float('inf')
         
-        # Calculate confidence score for this region - FIXED
+        # Calculate confidence score for this region
         region_mask = (labels == i)
         # Resize prob_mask to match original size for proper indexing
         prob_mask_resized = cv2.resize(prob_mask, original_size, interpolation=cv2.INTER_LINEAR)
         region_prob_values = prob_mask_resized[region_mask] if region_mask.sum() > 0 else [0]
-        region_confidence = np.mean(region_prob_values)
+        region_confidence = float(np.mean(region_prob_values))
         
         # More lenient criteria for region acceptance
         if (area >= min_area and 
             0.1 <= aspect_ratio <= 10.0 and  # More lenient aspect ratio
             w > 10 and h > 10):  # Minimum dimensions
             
-            detected_bboxes.append((x, y, w, h))
+            detected_bboxes.append((int(x), int(y), int(w), int(h)))
             region_scores.append(region_confidence)
             refined_mask[labels == i] = 255
             print(f"✓ Kept component {i}: Area={area}, AR={aspect_ratio:.2f}, Conf={region_confidence:.3f}")
@@ -532,7 +563,7 @@ def enhanced_post_process_mask(prob_mask, original_size, min_area=500):
     return refined_mask, detected_bboxes, region_scores
 
 def create_enhanced_highlight_visualization(image_path, mask, alpha=0.5, highlight_color=(0, 0, 255)):
-    """Create enhanced visualization with analytics - FIXED"""
+    """Create enhanced visualization with analytics"""
     # Load original image
     original = cv2.imread(image_path)
     if original is None:
@@ -583,140 +614,6 @@ def create_enhanced_highlight_visualization(image_path, mask, alpha=0.5, highlig
     
     return highlighted
 
-# === Analytics Visualization Functions ===
-def create_performance_charts(output_dir, filename):
-    """Create comprehensive performance and analysis charts"""
-    chart_paths = {}
-    
-    try:
-        # Get analytics summary
-        summary = analytics.get_summary()
-        
-        # 1. Processing Time Breakdown
-        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
-        
-        # Timing chart
-        timing_data = summary['timing']
-        phases = ['Classification', 'Segmentation', 'Post-processing', 'Copy-move']
-        times = [timing_data['classification_time'], timing_data['segmentation_time'], 
-                timing_data['post_processing_time'], timing_data['copy_move_time']]
-        
-        colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4']
-        ax1.pie(times, labels=phases, autopct='%1.1f%%', colors=colors, startangle=90)
-        ax1.set_title('Processing Time Distribution', fontweight='bold')
-        
-        # 2. Classification Confidence
-        if summary['classification']['probabilities']:
-            probs = summary['classification']['probabilities']
-            classes = ['Forged', 'Authentic']
-            bars = ax2.bar(classes, probs, color=['#FF4757', '#2ED573'])
-            ax2.set_title('Classification Probabilities', fontweight='bold')
-            ax2.set_ylabel('Probability')
-            ax2.set_ylim(0, 1)
-            
-            # Add value labels on bars
-            for bar, prob in zip(bars, probs):
-                height = bar.get_height()
-                ax2.text(bar.get_x() + bar.get_width()/2., height + 0.02,
-                        f'{prob:.3f}', ha='center', va='bottom', fontweight='bold')
-        
-        # 3. Forensic Features Analysis
-        forensic_data = summary['forensic_features']
-        features = []
-        energies = []
-        means = []
-        
-        for feature_name, stats in forensic_data.items():
-            if stats:  # Check if stats is not empty
-                features.append(feature_name.replace('_stats', '').upper())
-                energies.append(stats.get('energy', 0))
-                means.append(stats.get('mean', 0))
-        
-        if features:
-            x_pos = np.arange(len(features))
-            
-            # Normalize energies for better visualization
-            if max(energies) > 0:
-                energies_norm = [e / max(energies) * 100 for e in energies]
-            else:
-                energies_norm = energies
-            
-            ax3.bar(x_pos, energies_norm, color=['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'])
-            ax3.set_title('Forensic Feature Energy Levels', fontweight='bold')
-            ax3.set_ylabel('Normalized Energy')
-            ax3.set_xticks(x_pos)
-            ax3.set_xticklabels(features, rotation=45)
-        
-        # 4. Detection Statistics
-        detection_data = summary['detection']
-        if detection_data['detected_regions'] > 0:
-            # Region area distribution
-            areas = detection_data['region_areas']
-            ax4.hist(areas, bins=min(10, len(areas)), color='#FFA726', alpha=0.7, edgecolor='black')
-            ax4.set_title('Detected Region Area Distribution', fontweight='bold')
-            ax4.set_xlabel('Area (pixels)')
-            ax4.set_ylabel('Frequency')
-            ax4.axvline(detection_data['average_region_area'], color='red', linestyle='--', 
-                       label=f'Average: {detection_data["average_region_area"]:.0f}')
-            ax4.legend()
-        else:
-            ax4.text(0.5, 0.5, 'No Regions Detected', transform=ax4.transAxes, 
-                    ha='center', va='center', fontsize=16, fontweight='bold')
-            ax4.set_title('Detection Results', fontweight='bold')
-        
-        plt.tight_layout()
-        
-        # Save performance chart
-        perf_chart_path = os.path.join(output_dir, f"{filename}_performance.png")
-        plt.savefig(perf_chart_path, dpi=300, bbox_inches='tight')
-        plt.close()
-        chart_paths['performance'] = f"masks/{filename}_performance.png"
-        
-        print("✅ Performance charts created successfully")
-        return chart_paths
-        
-    except Exception as e:
-        print(f"❌ Error creating performance charts: {e}")
-        return {}
-
-def generate_analysis_report(image_path, results):
-    """Generate detailed textual analysis report"""
-    summary = analytics.get_summary()
-    
-    report = {
-        'image_info': {
-            'filename': os.path.basename(image_path),
-            'processing_time': summary['timing']['total_processing_time'],
-            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        },
-        'classification_analysis': {
-            'prediction': results['label'],
-            'confidence': results['confidence'],
-            'confidence_interpretation': get_confidence_interpretation(results['confidence']),
-            'probabilities': summary['classification']['probabilities']
-        },
-        'segmentation_analysis': {
-            'regions_detected': summary['detection']['detected_regions'],
-            'forged_percentage': summary['detection']['forged_percentage'],
-            'average_region_size': summary['detection']['average_region_area'],
-            'segmentation_quality': get_segmentation_quality(summary['segmentation'])
-        },
-        'forensic_analysis': {
-            'ela_findings': analyze_ela_results(summary['forensic_features']['ela_stats']),
-            'noise_findings': analyze_noise_results(summary['forensic_features']['noise_stats']),
-            'gradient_findings': analyze_gradient_results(summary['forensic_features']['gradient_stats']),
-            'texture_findings': analyze_texture_results(summary['forensic_features']['texture_stats'])
-        },
-        'technical_details': {
-            'processing_breakdown': summary['timing'],
-            'model_performance': calculate_model_performance(summary),
-            'detection_metrics': summary['detection']
-        },
-        'recommendations': generate_recommendations(results, summary)
-    }
-    
-    return report
-
 def get_confidence_interpretation(confidence):
     """Interpret confidence levels"""
     if confidence >= 0.9:
@@ -729,83 +626,6 @@ def get_confidence_interpretation(confidence):
         return "Low - Some uncertainty in classification"
     else:
         return "Very Low - High uncertainty, manual review recommended"
-
-def get_segmentation_quality(seg_stats):
-    """Assess segmentation quality"""
-    if not seg_stats['mask_statistics']:
-        return "No segmentation performed"
-    
-    confidence = seg_stats['confidence']
-    std = seg_stats['mask_statistics'].get('std_intensity', 0)
-    
-    if confidence >= 0.8 and std > 50:
-        return "Excellent - High confidence with good contrast"
-    elif confidence >= 0.6:
-        return "Good - Reliable segmentation results"
-    elif confidence >= 0.4:
-        return "Fair - Moderate reliability"
-    else:
-        return "Poor - Low confidence results"
-
-def analyze_ela_results(ela_stats):
-    """Analyze ELA results"""
-    if not ela_stats:
-        return "ELA analysis not available"
-    
-    energy = ela_stats.get('energy', 0)
-    mean = ela_stats.get('mean', 0)
-    
-    if energy > 10000 and mean > 50:
-        return "High ELA energy detected - Strong indication of compression artifacts or tampering"
-    elif energy > 5000:
-        return "Moderate ELA energy - Some compression inconsistencies detected"
-    else:
-        return "Low ELA energy - Minimal compression artifacts"
-
-def analyze_noise_results(noise_stats):
-    """Analyze noise residual results"""
-    if not noise_stats:
-        return "Noise analysis not available"
-    
-    std = noise_stats.get('std', 0)
-    energy = noise_stats.get('energy', 0)
-    
-    if std > 20 and energy > 5000:
-        return "High noise variance - Possible splicing or copy-move operations"
-    elif std > 10:
-        return "Moderate noise patterns - Some inconsistencies detected"
-    else:
-        return "Low noise variance - Consistent noise patterns"
-
-def analyze_gradient_results(grad_stats):
-    """Analyze gradient inconsistency results"""
-    if not grad_stats:
-        return "Gradient analysis not available"
-    
-    mean = grad_stats.get('mean', 0)
-    energy = grad_stats.get('energy', 0)
-    
-    if mean > 30 and energy > 8000:
-        return "High gradient inconsistencies - Strong evidence of boundary tampering"
-    elif mean > 15:
-        return "Moderate gradient anomalies - Some edge inconsistencies detected"
-    else:
-        return "Low gradient variance - Consistent edge characteristics"
-
-def analyze_texture_results(texture_stats):
-    """Analyze texture inconsistency results"""
-    if not texture_stats:
-        return "Texture analysis not available"
-    
-    std = texture_stats.get('std', 0)
-    energy = texture_stats.get('energy', 0)
-    
-    if std > 25 and energy > 6000:
-        return "High texture inconsistencies - Possible copy-move or splicing"
-    elif std > 12:
-        return "Moderate texture anomalies - Some pattern irregularities"
-    else:
-        return "Consistent texture patterns - No major anomalies detected"
 
 def calculate_model_performance(summary):
     """Calculate overall model performance metrics"""
@@ -900,12 +720,13 @@ def classify_image(image_path):
     return {
         "class": predicted_class,
         "label": label_map[predicted_class],
-        "confidence": confidence
+        "confidence": confidence,
+        "probabilities": probs.tolist()
     }
 
-# === Enhanced Segmentation Function - FIXED ===
+# === Enhanced Segmentation Function ===
 def segment_image(image_path, output_mask_path):
-    """Enhanced segmentation with comprehensive analytics - FIXED"""
+    """Enhanced segmentation with comprehensive analytics"""
     start_time = time.time()
     
     try:
@@ -1003,12 +824,12 @@ def segment_image(image_path, output_mask_path):
                 if area > 200:  # Very permissive
                     cv2.drawContours(refined_mask_np, [contour], -1, 255, -1)
                     x, y, w, h = cv2.boundingRect(contour)
-                    detected_bboxes.append((x, y, w, h))
+                    detected_bboxes.append((int(x), int(y), int(w), int(h)))
                     region_scores.append(0.5)  # Default score for permissive detection
             
             print(f"✅ Permissive detection found {len(detected_bboxes)} regions")
         
-        # Create enhanced visualization - FIXED
+        # Create enhanced visualization
         if refined_mask_np is not None:
             highlighted_image = create_enhanced_highlight_visualization(
                 image_path, 
@@ -1160,25 +981,67 @@ def detect_copy_move_forgery(image_path, output_path):
         analytics.log_timing("copy_move", time.time() - start_time)
         return None
 
-# === Main Prediction Pipeline - FIXED ===
+# === Main Prediction Pipeline with Enhanced Analytics ===
 def run_prediction_pipeline(image_path, output_dir="static/masks"):
-    """Enhanced prediction pipeline with comprehensive analytics - FIXED"""
+    """Enhanced prediction pipeline with comprehensive analytics and template data"""
     analytics.reset()  # Reset analytics for new analysis
     
     os.makedirs(output_dir, exist_ok=True)
     print(f"🚀 Processing image: {image_path}")
 
     # Step 1: Classification
-    result = classify_image(image_path)
-    print(f"📊 Classification: {result['label']} (Confidence: {result['confidence']:.4f})")
+    classification_result = classify_image(image_path)
+    print(f"📊 Classification: {classification_result['label']} (Confidence: {classification_result['confidence']:.4f})")
 
     filename = Path(image_path).stem
-    result["mask_path"] = None
-    result["copy_move_path"] = None
-    result["forged_objects_bboxes"] = []
-    result["forged_objects_overlay_path"] = None
-    result["analytics_charts"] = {}
-    result["analysis_report"] = {}
+    
+    # Initialize result with template-friendly data
+    result = {
+        "label": classification_result['label'],
+        "confidence": float(classification_result['confidence']),  # Ensure float
+        "mask_path": None,
+        "copy_move_path": None,
+        "forged_objects_bboxes": [],
+        "forged_objects_overlay_path": None,
+        "filename": os.path.basename(image_path),
+        
+        # Analytics summary for template
+        "processing_time": 0.0,
+        "regions_detected": 0,
+        "forged_percentage": 0.0,
+        "current_time": datetime.now().strftime("%H:%M:%S"),
+        "current_date": datetime.now().strftime("%Y-%m-%d"),
+        
+        # Classification probabilities for charts
+        "forged_probability": float(classification_result['probabilities'][0]),
+        "unforged_probability": float(classification_result['probabilities'][1]),
+        
+        # Timing breakdown
+        "classification_time": 0.0,
+        "segmentation_time": 0.0,
+        "post_processing_time": 0.0,
+        "copy_move_time": 0.0,
+        "max_time": 1.0,  # Prevent division by zero
+        
+        # Forensic energy values (normalized 0-100)
+        "ela_energy": 0.0,
+        "noise_energy": 0.0,
+        "gradient_energy": 0.0,
+        "texture_energy": 0.0,
+        
+        # Performance metrics
+        "efficiency_score": 0.0,
+        "detection_accuracy": 0.0,
+        "overall_score": 0.0,
+        "confidence_interpretation": get_confidence_interpretation(classification_result['confidence']),
+        
+        # Region statistics
+        "region_areas": [],
+        "average_region_size": 0.0,
+        
+        # Recommendations
+        "recommendations": []
+    }
 
     # Step 2: If forged, perform localization
     if result["label"] == "forged":
@@ -1189,7 +1052,9 @@ def run_prediction_pipeline(image_path, output_dir="static/masks"):
         full_mask_path = os.path.join(output_dir, mask_filename)
         forged_bboxes, region_scores = segment_image(image_path, full_mask_path)
         result["mask_path"] = f"masks/{mask_filename}".replace("\\", "/")
-        result["forged_objects_bboxes"] = forged_bboxes
+        
+        # Convert bboxes to ensure they're native Python types
+        result["forged_objects_bboxes"] = [[int(x), int(y), int(w), int(h)] for x, y, w, h in forged_bboxes]
 
         # Create bounding box overlay
         if forged_bboxes:
@@ -1220,26 +1085,68 @@ def run_prediction_pipeline(image_path, output_dir="static/masks"):
     else:
         print("✅ Image classified as UNFORGED. Skipping localization.")
 
-    # Step 3: Generate comprehensive analytics
-    print("📈 Generating performance analytics...")
+    # Step 3: Compile analytics summary
+    print("📈 Compiling analytics summary...")
+    summary = analytics.get_summary()
     
-    # Create performance charts
-    chart_paths = create_performance_charts(output_dir, filename)
-    result["analytics_charts"] = chart_paths
+    # Update result with analytics data
+    result.update({
+        "processing_time": summary['timing']['total_processing_time'],
+        "regions_detected": summary['detection']['detected_regions'],
+        "forged_percentage": summary['detection']['forged_percentage'],
+        
+        # Timing data
+        "classification_time": summary['timing']['classification_time'],
+        "segmentation_time": summary['timing']['segmentation_time'],
+        "post_processing_time": summary['timing']['post_processing_time'],
+        "copy_move_time": summary['timing']['copy_move_time'],
+        "max_time": max(summary['timing']['classification_time'], 
+                       summary['timing']['segmentation_time'],
+                       summary['timing']['post_processing_time'],
+                       summary['timing']['copy_move_time'], 0.001),
+        
+        # Forensic energy (normalized to 0-100 scale)
+        "ela_energy": min(summary['forensic_features']['ela_stats'].get('energy', 0) / 1000, 100) if summary['forensic_features']['ela_stats'] else 0,
+        "noise_energy": min(summary['forensic_features']['noise_stats'].get('energy', 0) / 1000, 100) if summary['forensic_features']['noise_stats'] else 0,
+        "gradient_energy": min(summary['forensic_features']['gradient_stats'].get('energy', 0) / 1000, 100) if summary['forensic_features']['gradient_stats'] else 0,
+        "texture_energy": min(summary['forensic_features']['texture_stats'].get('energy', 0) / 1000, 100) if summary['forensic_features']['texture_stats'] else 0,
+        
+        # Region data
+        "region_areas": summary['detection']['region_areas'],
+        "average_region_size": summary['detection']['average_region_area'],
+    })
     
-    # Generate detailed analysis report
-    analysis_report = generate_analysis_report(image_path, result)
-    result["analysis_report"] = analysis_report
+    # Calculate performance metrics
+    performance = calculate_model_performance(summary)
+    result.update({
+        "efficiency_score": performance['efficiency_score'],
+        "detection_accuracy": performance['detection_accuracy'],
+        "overall_score": performance['overall_score']
+    })
     
-    # Save analytics summary as JSON
-    summary_filename = f"{filename}_analytics_summary.json"
-    summary_path = os.path.join(output_dir, summary_filename)
+    # Generate recommendations
+    recommendations = generate_recommendations(result, summary)
+    result["recommendations"] = recommendations
+    
+    # Save detailed analytics as JSON
+    analytics_filename = f"{filename}_analytics.json"
+    analytics_path = os.path.join(output_dir, analytics_filename)
     try:
-        with open(summary_path, 'w') as f:
-            json.dump(analysis_report, f, indent=2)
-        result["analytics_summary_path"] = f"masks/{summary_filename}".replace("\\", "/")
-        print(f"✅ Analytics summary saved: {summary_path}")
+        detailed_analytics = {
+            'summary': summary,
+            'performance': performance,
+            'recommendations': recommendations,
+            'timestamp': datetime.now().isoformat()
+        }
+        with open(analytics_path, 'w') as f:
+            json.dump(detailed_analytics, f, indent=2, cls=NumpyEncoder)
+        print(f"✅ Detailed analytics saved: {analytics_path}")
     except Exception as e:
-        print(f"❌ Error saving analytics summary: {e}")
+        print(f"❌ Error saving analytics: {e}")
 
+    print(f"🏁 Analysis completed in {result['processing_time']:.3f}s")
+    
+    # Convert all numpy types in result to native Python types
+    result = convert_numpy_types(result)
+    
     return result

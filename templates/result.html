@@ -5,20 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Forgery Detection Analysis Results</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         :root {
-            --primary-color: #2563eb;
+            --primary-color: #3b82f6;
             --secondary-color: #1e40af;
-            --success-color: #059669;
-            --warning-color: #d97706;
-            --danger-color: #dc2626;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
             --bg-light: #f8fafc;
-            --bg-dark: #1e293b;
-            --text-dark: #1e293b;
-            --text-light: #64748b;
-            --border-color: #e2e8f0;
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --border-radius: 12px;
+            --bg-white: #ffffff;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --border-radius: 8px;
         }
 
         * {
@@ -29,37 +32,26 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
             min-height: 100vh;
             color: var(--text-dark);
             line-height: 1.6;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
         }
 
         .header-card {
-            background: white;
+            background: var(--bg-white);
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
             padding: 2rem;
             margin-bottom: 2rem;
             text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-top: 4px solid var(--primary-color);
         }
 
         .header-card h1 {
@@ -75,29 +67,25 @@
         }
 
         .result-banner {
-            background: white;
+            background: var(--bg-white);
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
             padding: 2rem;
             margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
+            border-left: 6px solid var(--success-color);
         }
 
         .result-banner.forged {
-            border-left: 6px solid var(--danger-color);
-        }
-
-        .result-banner.unforged {
-            border-left: 6px solid var(--success-color);
+            border-left-color: var(--danger-color);
         }
 
         .result-status {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 1rem;
+            gap: 1.5rem;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
         }
 
         .status-icon {
@@ -109,14 +97,11 @@
             justify-content: center;
             font-size: 1.5rem;
             color: white;
+            background: var(--success-color);
         }
 
         .status-icon.forged {
             background: var(--danger-color);
-        }
-
-        .status-icon.unforged {
-            background: var(--success-color);
         }
 
         .status-text {
@@ -128,14 +113,11 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 1px;
+            color: var(--success-color);
         }
 
         .status-label.forged {
             color: var(--danger-color);
-        }
-
-        .status-label.unforged {
-            color: var(--success-color);
         }
 
         .confidence-score {
@@ -160,15 +142,11 @@
             height: 100%;
             border-radius: 6px;
             transition: width 2s ease-in-out;
-            position: relative;
+            background: linear-gradient(90deg, var(--success-color), #34d399);
         }
 
         .confidence-fill.forged {
-            background: linear-gradient(90deg, var(--danger-color), #ef4444);
-        }
-
-        .confidence-fill.unforged {
-            background: linear-gradient(90deg, var(--success-color), #10b981);
+            background: linear-gradient(90deg, var(--danger-color), #f87171);
         }
 
         .metrics-grid {
@@ -183,6 +161,7 @@
             padding: 1.25rem;
             border-radius: var(--border-radius);
             text-align: center;
+            border: 1px solid var(--border-color);
         }
 
         .metric-value {
@@ -200,7 +179,7 @@
         }
 
         .section {
-            background: white;
+            background: var(--bg-white);
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
             margin-bottom: 2rem;
@@ -249,11 +228,12 @@
             border-radius: var(--border-radius);
             overflow: hidden;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background: var(--bg-white);
         }
 
         .image-card:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow);
+            box-shadow: var(--shadow-lg);
         }
 
         .image-card img {
@@ -270,6 +250,7 @@
             font-size: 1.125rem;
             font-weight: 600;
             margin-bottom: 0.5rem;
+            color: var(--text-dark);
         }
 
         .image-card p {
@@ -277,72 +258,33 @@
             color: var(--text-light);
         }
 
-        .analysis-grid {
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 1.5rem;
         }
 
-        .analysis-card {
-            background: var(--bg-light);
+        .stats-card {
+            background: var(--bg-white);
+            border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
             padding: 1.5rem;
-            border-left: 4px solid var(--primary-color);
+            box-shadow: var(--shadow-sm);
         }
 
-        .analysis-card h4 {
+        .stats-card h4 {
             font-size: 1.125rem;
             font-weight: 600;
             margin-bottom: 1rem;
             color: var(--text-dark);
-        }
-
-        .analysis-card p {
-            color: var(--text-light);
-            font-size: 0.9rem;
-        }
-
-        .detection-regions {
-            background: #fef3c7;
-            border: 1px solid #f59e0b;
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            margin-top: 1.5rem;
-        }
-
-        .detection-regions h3 {
-            color: #92400e;
-            margin-bottom: 1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        .regions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .region-item {
-            background: white;
-            padding: 1rem;
-            border-radius: 8px;
-            border-left: 4px solid var(--warning-color);
-        }
-
-        .region-item strong {
-            color: var(--text-dark);
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-
-        .region-item span {
-            font-size: 0.875rem;
-            color: var(--text-light);
-            display: block;
-            margin-bottom: 0.25rem;
+        .chart-container {
+            height: 300px;
+            margin: 1rem 0;
         }
 
         .timing-section {
@@ -350,6 +292,7 @@
             border-radius: var(--border-radius);
             padding: 1.5rem;
             margin-top: 1.5rem;
+            border: 1px solid var(--border-color);
         }
 
         .timing-item {
@@ -367,7 +310,7 @@
         .timing-bar {
             flex: 1;
             height: 20px;
-            background: #e5e7eb;
+            background: var(--border-color);
             border-radius: 10px;
             overflow: hidden;
             margin: 0 1rem;
@@ -403,44 +346,48 @@
             color: var(--text-dark);
         }
 
-        .forensic-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .forensic-card {
-            background: white;
+        .detection-regions {
+            background: #fef3c7;
+            border: 1px solid var(--warning-color);
             border-radius: var(--border-radius);
             padding: 1.5rem;
-            border-top: 4px solid var(--primary-color);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-top: 1.5rem;
         }
 
-        .forensic-card h4 {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
+        .detection-regions h3 {
+            color: #92400e;
             margin-bottom: 1rem;
-            font-size: 1.125rem;
-            font-weight: 600;
-        }
-
-        .forensic-icon {
-            width: 32px;
-            height: 32px;
-            background: var(--primary-color);
-            color: white;
-            border-radius: 50%;
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-weight: 600;
+            gap: 0.5rem;
         }
 
-        .forensic-card p {
+        .regions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .region-item {
+            background: var(--bg-white);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--warning-color);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .region-item strong {
+            color: var(--text-dark);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .region-item span {
+            font-size: 0.875rem;
             color: var(--text-light);
-            font-size: 0.9rem;
+            display: block;
+            margin-bottom: 0.25rem;
         }
 
         .recommendations {
@@ -466,15 +413,15 @@
         }
 
         .recommendation-list li {
-            background: white;
+            background: var(--bg-white);
             padding: 1rem;
             margin-bottom: 0.75rem;
-            border-radius: 8px;
+            border-radius: var(--border-radius);
             border-left: 4px solid var(--primary-color);
             display: flex;
             align-items: flex-start;
             gap: 0.75rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: var(--shadow-sm);
         }
 
         .recommendation-list li::before {
@@ -499,61 +446,13 @@
             border-radius: var(--border-radius);
             font-weight: 500;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+            box-shadow: var(--shadow);
         }
 
         .btn:hover {
             background: var(--secondary-color);
             transform: translateY(-1px);
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-light);
-        }
-
-        .no-data i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-
-            .header-card h1 {
-                font-size: 2rem;
-            }
-
-            .image-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .analysis-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .forensic-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .timing-label {
-                width: 100px;
-                font-size: 0.875rem;
-            }
-
-            .timing-value {
-                width: 60px;
-                font-size: 0.875rem;
-            }
+            box-shadow: var(--shadow-lg);
         }
 
         .fade-in {
@@ -571,18 +470,54 @@
             }
         }
 
-        .slide-in {
-            animation: slideIn 0.8s ease-out;
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header-card h1 {
+                font-size: 2rem;
+            }
+
+            .result-status {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .status-text {
+                text-align: center;
+            }
+
+            .image-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .timing-label {
+                width: 80px;
+                font-size: 0.875rem;
+            }
+
+            .timing-value {
+                width: 60px;
+                font-size: 0.875rem;
+            }
+
+            .chart-container {
+                height: 250px;
+            }
         }
 
-        @keyframes slideIn {
-            from {
-                transform: translateX(-50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
+        @media (max-width: 480px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -596,7 +531,7 @@
         </div>
 
         <!-- Result Banner -->
-        <div class="result-banner {{ 'forged' if label == 'forged' else 'unforged' }} slide-in">
+        <div class="result-banner {{ 'forged' if label == 'forged' else 'unforged' }} fade-in">
             <div class="result-status">
                 <div class="status-icon {{ label }}">
                     <i class="fas {{ 'fa-exclamation-triangle' if label == 'forged' else 'fa-check-circle' }}"></i>
@@ -613,28 +548,26 @@
                 </div>
             </div>
 
-            {% if analysis_report and analysis_report.image_info %}
             <div class="metrics-grid">
                 <div class="metric-card">
-                    <div class="metric-value">{{ '{:.3f}'.format(analysis_report.image_info.processing_time) }}s</div>
+                    <div class="metric-value">{{ '{:.3f}'.format(processing_time) }}s</div>
                     <div class="metric-label">Processing Time</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-value">{{ analysis_report.image_info.timestamp.split(' ')[1] }}</div>
-                    <div class="metric-label">Analysis Time</div>
-                </div>
-                {% if analysis_report.segmentation_analysis.regions_detected > 0 %}
-                <div class="metric-card">
-                    <div class="metric-value">{{ analysis_report.segmentation_analysis.regions_detected }}</div>
+                    <div class="metric-value">{{ regions_detected }}</div>
                     <div class="metric-label">Regions Detected</div>
                 </div>
+                {% if forged_percentage > 0 %}
                 <div class="metric-card">
-                    <div class="metric-value">{{ '{:.1f}'.format(analysis_report.segmentation_analysis.forged_percentage) }}%</div>
+                    <div class="metric-value">{{ '{:.1f}'.format(forged_percentage) }}%</div>
                     <div class="metric-label">Image Affected</div>
                 </div>
                 {% endif %}
+                <div class="metric-card">
+                    <div class="metric-value">{{ current_time }}</div>
+                    <div class="metric-label">Analysis Time</div>
+                </div>
             </div>
-            {% endif %}
         </div>
 
         <!-- Visual Analysis Results -->
@@ -704,110 +637,87 @@
             </div>
         </div>
 
-        <!-- Performance Analytics -->
-        {% if analysis_report %}
+        <!-- Machine Learning Statistics -->
         <div class="section fade-in">
             <div class="section-header">
                 <div class="section-icon">
                     <i class="fas fa-chart-line"></i>
                 </div>
-                <h2 class="section-title">Performance Analytics</h2>
+                <h2 class="section-title">Machine Learning Performance Metrics</h2>
             </div>
             <div class="section-content">
+                <div class="stats-grid">
+                    <div class="stats-card">
+                        <h4><i class="fas fa-brain"></i> Classification Performance</h4>
+                        <div class="chart-container">
+                            <canvas id="classificationChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-card">
+                        <h4><i class="fas fa-clock"></i> Processing Time Analysis</h4>
+                        <div class="chart-container">
+                            <canvas id="timingChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-card">
+                        <h4><i class="fas fa-microscope"></i> Forensic Features Energy</h4>
+                        <div class="chart-container">
+                            <canvas id="forensicChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    {% if regions_detected > 0 %}
+                    <div class="stats-card">
+                        <h4><i class="fas fa-map-marked-alt"></i> Region Detection Stats</h4>
+                        <div class="chart-container">
+                            <canvas id="regionChart"></canvas>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Processing Time Breakdown -->
                 <div class="timing-section">
                     <h3><i class="fas fa-stopwatch"></i> Processing Time Breakdown</h3>
-                    {% set max_time = [
-                        analysis_report.technical_details.processing_breakdown.classification_time,
-                        analysis_report.technical_details.processing_breakdown.segmentation_time,
-                        analysis_report.technical_details.processing_breakdown.post_processing_time,
-                        analysis_report.technical_details.processing_breakdown.copy_move_time
-                    ] | max %}
                     
                     <div class="timing-item">
                         <div class="timing-label">Classification</div>
                         <div class="timing-bar">
-                            <div class="timing-fill classification" style="width: {{ '{:.1f}'.format((analysis_report.technical_details.processing_breakdown.classification_time / max_time) * 100) }}%"></div>
+                            <div class="timing-fill classification" style="width: {{ '{:.1f}'.format((classification_time / max_time) * 100 if max_time > 0 else 0) }}%"></div>
                         </div>
-                        <div class="timing-value">{{ '{:.3f}'.format(analysis_report.technical_details.processing_breakdown.classification_time) }}s</div>
+                        <div class="timing-value">{{ '{:.3f}'.format(classification_time) }}s</div>
                     </div>
                     
                     <div class="timing-item">
                         <div class="timing-label">Segmentation</div>
                         <div class="timing-bar">
-                            <div class="timing-fill segmentation" style="width: {{ '{:.1f}'.format((analysis_report.technical_details.processing_breakdown.segmentation_time / max_time) * 100) }}%"></div>
+                            <div class="timing-fill segmentation" style="width: {{ '{:.1f}'.format((segmentation_time / max_time) * 100 if max_time > 0 else 0) }}%"></div>
                         </div>
-                        <div class="timing-value">{{ '{:.3f}'.format(analysis_report.technical_details.processing_breakdown.segmentation_time) }}s</div>
+                        <div class="timing-value">{{ '{:.3f}'.format(segmentation_time) }}s</div>
                     </div>
                     
                     <div class="timing-item">
                         <div class="timing-label">Post-processing</div>
                         <div class="timing-bar">
-                            <div class="timing-fill post-processing" style="width: {{ '{:.1f}'.format((analysis_report.technical_details.processing_breakdown.post_processing_time / max_time) * 100) }}%"></div>
+                            <div class="timing-fill post-processing" style="width: {{ '{:.1f}'.format((post_processing_time / max_time) * 100 if max_time > 0 else 0) }}%"></div>
                         </div>
-                        <div class="timing-value">{{ '{:.3f}'.format(analysis_report.technical_details.processing_breakdown.post_processing_time) }}s</div>
+                        <div class="timing-value">{{ '{:.3f}'.format(post_processing_time) }}s</div>
                     </div>
                     
                     <div class="timing-item">
                         <div class="timing-label">Copy-Move</div>
                         <div class="timing-bar">
-                            <div class="timing-fill copy-move" style="width: {{ '{:.1f}'.format((analysis_report.technical_details.processing_breakdown.copy_move_time / max_time) * 100) }}%"></div>
+                            <div class="timing-fill copy-move" style="width: {{ '{:.1f}'.format((copy_move_time / max_time) * 100 if max_time > 0 else 0) }}%"></div>
                         </div>
-                        <div class="timing-value">{{ '{:.3f}'.format(analysis_report.technical_details.processing_breakdown.copy_move_time) }}s</div>
+                        <div class="timing-value">{{ '{:.3f}'.format(copy_move_time) }}s</div>
                     </div>
                 </div>
             </div>
         </div>
-        {% endif %}
-
-        <!-- Forensic Analysis -->
-        {% if analysis_report and analysis_report.forensic_analysis %}
-        <div class="section fade-in">
-            <div class="section-header">
-                <div class="section-icon">
-                    <i class="fas fa-microscope"></i>
-                </div>
-                <h2 class="section-title">Forensic Evidence Analysis</h2>
-            </div>
-            <div class="section-content">
-                <div class="forensic-grid">
-                    <div class="forensic-card">
-                        <h4>
-                            <div class="forensic-icon">E</div>
-                            ELA Analysis
-                        </h4>
-                        <p>{{ analysis_report.forensic_analysis.ela_findings }}</p>
-                    </div>
-                    
-                    <div class="forensic-card">
-                        <h4>
-                            <div class="forensic-icon">N</div>
-                            Noise Analysis
-                        </h4>
-                        <p>{{ analysis_report.forensic_analysis.noise_findings }}</p>
-                    </div>
-                    
-                    <div class="forensic-card">
-                        <h4>
-                            <div class="forensic-icon">G</div>
-                            Gradient Analysis
-                        </h4>
-                        <p>{{ analysis_report.forensic_analysis.gradient_findings }}</p>
-                    </div>
-                    
-                    <div class="forensic-card">
-                        <h4>
-                            <div class="forensic-icon">T</div>
-                            Texture Analysis
-                        </h4>
-                        <p>{{ analysis_report.forensic_analysis.texture_findings }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
 
         <!-- Technical Analysis -->
-        {% if analysis_report %}
         <div class="section fade-in">
             <div class="section-header">
                 <div class="section-icon">
@@ -816,74 +726,46 @@
                 <h2 class="section-title">Technical Analysis</h2>
             </div>
             <div class="section-content">
-                <div class="analysis-grid">
-                    <div class="analysis-card">
-                        <h4><i class="fas fa-brain"></i> Classification Analysis</h4>
-                        <p><strong>Prediction:</strong> {{ analysis_report.classification_analysis.prediction | title }}</p>
-                        <p><strong>Confidence:</strong> {{ '{:.4f}'.format(analysis_report.classification_analysis.confidence) }}</p>
-                        <p><strong>Interpretation:</strong> {{ analysis_report.classification_analysis.confidence_interpretation }}</p>
+                <div class="stats-grid">
+                    <div class="stats-card">
+                        <h4><i class="fas fa-brain"></i> Model Confidence Analysis</h4>
+                        <p><strong>Classification:</strong> {{ label | title }}</p>
+                        <p><strong>Confidence Score:</strong> {{ '{:.4f}'.format(confidence) }}</p>
+                        <p><strong>Interpretation:</strong> {{ confidence_interpretation }}</p>
                     </div>
                     
-                    {% if analysis_report.segmentation_analysis.regions_detected > 0 %}
-                    <div class="analysis-card">
+                    {% if regions_detected > 0 %}
+                    <div class="stats-card">
                         <h4><i class="fas fa-puzzle-piece"></i> Segmentation Quality</h4>
-                        <p><strong>Quality:</strong> {{ analysis_report.segmentation_analysis.segmentation_quality }}</p>
-                        <p><strong>Affected Area:</strong> {{ '{:.2f}'.format(analysis_report.segmentation_analysis.forged_percentage) }}%</p>
-                        <p>{{ analysis_report.segmentation_analysis.regions_detected }} distinct regions detected with average size of {{ '{:.0f}'.format(analysis_report.segmentation_analysis.average_region_size) }} pixels.</p>
+                        <p><strong>Regions Detected:</strong> {{ regions_detected }}</p>
+                        <p><strong>Affected Area:</strong> {{ '{:.2f}'.format(forged_percentage) }}%</p>
+                        <p><strong>Average Region Size:</strong> {{ '{:.0f}'.format(average_region_size) }} pixels</p>
                     </div>
                     {% endif %}
                     
-                    {% if analysis_report.technical_details.model_performance %}
-                    <div class="analysis-card">
-                        <h4><i class="fas fa-tachometer-alt"></i> Model Performance</h4>
-                        <p><strong>Efficiency Score:</strong> {{ '{:.3f}'.format(analysis_report.technical_details.model_performance.efficiency_score) }}</p>
-                        <p><strong>Detection Accuracy:</strong> {{ '{:.3f}'.format(analysis_report.technical_details.model_performance.detection_accuracy) }}</p>
-                        <p><strong>Overall Score:</strong> {{ '{:.3f}'.format(analysis_report.technical_details.model_performance.overall_score) }}</p>
+                    <div class="stats-card">
+                        <h4><i class="fas fa-tachometer-alt"></i> Performance Metrics</h4>
+                        <p><strong>Processing Efficiency:</strong> {{ '{:.3f}'.format(efficiency_score) }}</p>
+                        <p><strong>Detection Accuracy:</strong> {{ '{:.3f}'.format(detection_accuracy) }}</p>
+                        <p><strong>Overall Score:</strong> {{ '{:.3f}'.format(overall_score) }}</p>
                     </div>
-                    {% endif %}
                     
-                    <div class="analysis-card">
-                        <h4><i class="fas fa-info-circle"></i> Processing Summary</h4>
-                        <p><strong>Total Time:</strong> {{ '{:.3f}'.format(analysis_report.image_info.processing_time) }}s</p>
+                    <div class="stats-card">
+                        <h4><i class="fas fa-info-circle"></i> System Information</h4>
+                        <p><strong>Total Processing Time:</strong> {{ '{:.3f}'.format(processing_time) }}s</p>
                         <p><strong>Image Format:</strong> {{ filename.split('.')[-1].upper() }}</p>
-                        <p>Comprehensive analysis completed with multi-scale inference and enhanced post-processing.</p>
+                        <p><strong>Analysis Date:</strong> {{ current_date }}</p>
                     </div>
                 </div>
             </div>
         </div>
-        {% endif %}
-
-        <!-- Performance Charts -->
-        {% if analytics_charts %}
-        <div class="section fade-in">
-            <div class="section-header">
-                <div class="section-icon">
-                    <i class="fas fa-chart-bar"></i>
-                </div>
-                <h2 class="section-title">Performance Charts</h2>
-            </div>
-            <div class="section-content">
-                <div class="image-grid">
-                    {% if analytics_charts.performance %}
-                    <div class="image-card">
-                        <img src="/static/{{ analytics_charts.performance }}" alt="Performance Chart" loading="lazy">
-                        <div class="image-card-content">
-                            <h3><i class="fas fa-chart-pie"></i> Performance Overview</h3>
-                            <p>Comprehensive performance metrics and timing analysis.</p>
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
 
         <!-- Recommendations -->
-        {% if analysis_report and analysis_report.recommendations %}
+        {% if recommendations %}
         <div class="recommendations fade-in">
             <h3><i class="fas fa-lightbulb"></i> Expert Recommendations</h3>
             <ul class="recommendation-list">
-                {% for recommendation in analysis_report.recommendations %}
+                {% for recommendation in recommendations %}
                 <li>{{ recommendation }}</li>
                 {% endfor %}
             </ul>
@@ -900,12 +782,145 @@
     </div>
 
     <script>
+        // Chart.js configurations and data
+        const chartData = {
+            classification: {
+                forged_prob: {{ forged_probability }},
+                unforged_prob: {{ unforged_probability }}
+            },
+            timing: {
+                classification: {{ classification_time }},
+                segmentation: {{ segmentation_time }},
+                post_processing: {{ post_processing_time }},
+                copy_move: {{ copy_move_time }}
+            },
+            forensic: {
+                ela_energy: {{ ela_energy }},
+                noise_energy: {{ noise_energy }},
+                gradient_energy: {{ gradient_energy }},
+                texture_energy: {{ texture_energy }}
+            },
+            regions: {{ region_areas | tojson if region_areas else [] }}
+        };
+
+        // Classification Chart
+        const classCtx = document.getElementById('classificationChart').getContext('2d');
+        new Chart(classCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Forged', 'Authentic'],
+                datasets: [{
+                    data: [chartData.classification.forged_prob, chartData.classification.unforged_prob],
+                    backgroundColor: ['#ef4444', '#10b981'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Time (seconds)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Forensic Features Chart
+        const forensicCtx = document.getElementById('forensicChart').getContext('2d');
+        new Chart(forensicCtx, {
+            type: 'radar',
+            data: {
+                labels: ['ELA Energy', 'Noise Energy', 'Gradient Energy', 'Texture Energy'],
+                datasets: [{
+                    label: 'Feature Strength',
+                    data: [
+                        chartData.forensic.ela_energy,
+                        chartData.forensic.noise_energy,
+                        chartData.forensic.gradient_energy,
+                        chartData.forensic.texture_energy
+                    ],
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    borderColor: '#3b82f6',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#3b82f6',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // Region Areas Chart (if regions detected)
+        {% if regions_detected > 0 %}
+        const regionCtx = document.getElementById('regionChart').getContext('2d');
+        new Chart(regionCtx, {
+            type: 'bar',
+            data: {
+                labels: chartData.regions.map((_, i) => `Region ${i + 1}`),
+                datasets: [{
+                    label: 'Area (pixels²)',
+                    data: chartData.regions,
+                    backgroundColor: '#f59e0b',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Area (pixels²)'
+                        }
+                    }
+                }
+            }
+        });
+        {% endif %}
+
+        // Animate elements on page load
         document.addEventListener('DOMContentLoaded', function() {
             // Animate confidence bar
             setTimeout(() => {
                 const confidenceFill = document.querySelector('.confidence-fill');
                 if (confidenceFill) {
-                    confidenceFill.style.width = confidenceFill.getAttribute('style').match(/width:\s*([^;]+)/)[1];
+                    const width = confidenceFill.style.width;
+                    confidenceFill.style.width = '0%';
+                    setTimeout(() => {
+                        confidenceFill.style.width = width;
+                    }, 100);
                 }
             }, 500);
             
@@ -913,16 +928,42 @@
             setTimeout(() => {
                 const timingFills = document.querySelectorAll('.timing-fill');
                 timingFills.forEach((fill, index) => {
+                    const width = fill.style.width;
+                    fill.style.width = '0%';
                     setTimeout(() => {
-                        fill.style.width = fill.getAttribute('style').match(/width:\s*([^;]+)/)[1];
-                    }, index * 200);
+                        fill.style.width = width;
+                    }, index * 200 + 100);
                 });
             }, 1000);
-            
-            // Add intersection observer for animations
-            const observerOptions = {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
-            };
-            
-            const observer = new IntersectionObserver((entries)
+        });
+    </script>
+</body>
+</html>,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Timing Chart
+        const timingCtx = document.getElementById('timingChart').getContext('2d');
+        new Chart(timingCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Classification', 'Segmentation', 'Post-process', 'Copy-Move'],
+                datasets: [{
+                    data: [
+                        chartData.timing.classification,
+                        chartData.timing.segmentation,
+                        chartData.timing.post_processing,
+                        chartData.timing.copy_move
+                    ],
+                    backgroundColor: ['#ef4444', '#06b6d4', '#8b5cf6', '#10b981'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true
