@@ -1,91 +1,928 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Forgery Detection Result</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgery Detection Analysis Results</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --danger-color: #dc2626;
+            --bg-light: #f8fafc;
+            --bg-dark: #1e293b;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --border-radius: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
             text-align: center;
-            margin: 40px;
+            position: relative;
+            overflow: hidden;
         }
 
-        h1 {
-            color: #333;
+        .header-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
         }
 
-        .images-container {
+        .header-card h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .header-card .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-light);
+        }
+
+        .result-banner {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-banner.forged {
+            border-left: 6px solid var(--danger-color);
+        }
+
+        .result-banner.unforged {
+            border-left: 6px solid var(--success-color);
+        }
+
+        .result-status {
             display: flex;
+            align-items: center;
             justify-content: center;
-            gap: 40px;
-            margin-top: 30px;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
 
-        .image-block {
+        .status-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .status-icon.forged {
+            background: var(--danger-color);
+        }
+
+        .status-icon.unforged {
+            background: var(--success-color);
+        }
+
+        .status-text {
+            text-align: left;
+        }
+
+        .status-label {
+            font-size: 2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-label.forged {
+            color: var(--danger-color);
+        }
+
+        .status-label.unforged {
+            color: var(--success-color);
+        }
+
+        .confidence-score {
+            font-size: 1.2rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+        }
+
+        .confidence-bar-container {
+            margin: 1.5rem 0;
+        }
+
+        .confidence-bar {
+            background: var(--bg-light);
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 2s ease-in-out;
+            position: relative;
+        }
+
+        .confidence-fill.forged {
+            background: linear-gradient(90deg, var(--danger-color), #ef4444);
+        }
+
+        .confidence-fill.unforged {
+            background: linear-gradient(90deg, var(--success-color), #10b981);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .metric-card {
+            background: var(--bg-light);
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
             text-align: center;
         }
 
-        .image-block img {
-            max-width: 400px;
-            height: auto;
-            border: 2px solid #ddd;
-            border-radius: 6px;
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
         }
 
-        .label {
-            font-size: 24px;
-            margin-top: 20px;
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .confidence {
-            font-size: 18px;
-            color: #555;
+        .section {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: var(--bg-light);
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .section-content {
+            padding: 2rem;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .image-card {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .image-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+
+        .image-card-content {
+            padding: 1.25rem;
+        }
+
+        .image-card h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .image-card p {
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .analysis-card {
+            background: var(--bg-light);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .analysis-card h4 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        .analysis-card p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .detection-regions {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .detection-regions h3 {
+            color: #92400e;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .regions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .region-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .region-item strong {
+            color: var(--text-dark);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .region-item span {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .timing-section {
+            background: var(--bg-light);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .timing-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .timing-label {
+            width: 140px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .timing-bar {
+            flex: 1;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 0 1rem;
+            position: relative;
+        }
+
+        .timing-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 2s ease-in-out;
+        }
+
+        .timing-fill.classification {
+            background: linear-gradient(90deg, #ef4444, #f87171);
+        }
+
+        .timing-fill.segmentation {
+            background: linear-gradient(90deg, #06b6d4, #67e8f9);
+        }
+
+        .timing-fill.post-processing {
+            background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+        }
+
+        .timing-fill.copy-move {
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+
+        .timing-value {
+            width: 80px;
+            text-align: right;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .forensic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .forensic-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            border-top: 4px solid var(--primary-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .forensic-card h4 {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .forensic-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .forensic-card p {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .recommendations {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            margin-top: 2rem;
+            border: 1px solid #bae6fd;
+        }
+
+        .recommendations h3 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.375rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .recommendation-list {
+            list-style: none;
+        }
+
+        .recommendation-list li {
+            background: white;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .recommendation-list li::before {
+            content: '💡';
+            font-size: 1.25rem;
+            margin-top: 0.125rem;
         }
 
         .back-button {
-            margin-top: 40px;
+            text-align: center;
+            margin-top: 3rem;
         }
 
-        .back-button a {
-            text-decoration: none;
-            background-color: #4CAF50;
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--primary-color);
             color: white;
-            padding: 12px 25px;
-            border-radius: 5px;
-            font-size: 16px;
+            padding: 0.875rem 2rem;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
         }
 
-        .back-button a:hover {
-            background-color: #45a049;
+        .btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
         }
 
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+        }
+
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header-card h1 {
+                font-size: 2rem;
+            }
+
+            .image-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .forensic-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .timing-label {
+                width: 100px;
+                font-size: 0.875rem;
+            }
+
+            .timing-value {
+                width: 60px;
+                font-size: 0.875rem;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-in {
+            animation: slideIn 0.8s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>Forgery Detection Result</h1>
-
-    <div class="label">
-        <strong>Prediction:</strong> {{ label | capitalize }}
-    </div>
-    <div class="confidence">
-        <strong>Confidence:</strong> {{ '{:.2f}'.format(confidence * 100) }}%
-    </div>
-
-    <div class="images-container">
-        <div class="image-block">
-            <h3>Original Image</h3>
-            <img src="/static/uploads/{{ filename }}" alt="Uploaded Image">
+    <div class="container">
+        <!-- Header -->
+        <div class="header-card fade-in">
+            <h1><i class="fas fa-search"></i> Forgery Detection Analysis</h1>
+            <p class="subtitle">Advanced AI-Powered Image Authentication Results</p>
         </div>
 
-        {% if mask_path %}
-        <div class="image-block">
-            <h3>Forged Areas Highlighted</h3>
-            <img src="/static/{{ mask_path }}" alt="Forgery Mask">
+        <!-- Result Banner -->
+        <div class="result-banner {{ 'forged' if label == 'forged' else 'unforged' }} slide-in">
+            <div class="result-status">
+                <div class="status-icon {{ label }}">
+                    <i class="fas {{ 'fa-exclamation-triangle' if label == 'forged' else 'fa-check-circle' }}"></i>
+                </div>
+                <div class="status-text">
+                    <div class="status-label {{ label }}">{{ label | title }}</div>
+                    <div class="confidence-score">Confidence: {{ '{:.1f}'.format(confidence * 100) }}%</div>
+                </div>
+            </div>
+            
+            <div class="confidence-bar-container">
+                <div class="confidence-bar">
+                    <div class="confidence-fill {{ label }}" style="width: {{ '{:.1f}'.format(confidence * 100) }}%"></div>
+                </div>
+            </div>
+
+            {% if analysis_report and analysis_report.image_info %}
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value">{{ '{:.3f}'.format(analysis_report.image_info.processing_time) }}s</div>
+                    <div class="metric-label">Processing Time</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">{{ analysis_report.image_info.timestamp.split(' ')[1] }}</div>
+                    <div class="metric-label">Analysis Time</div>
+                </div>
+                {% if analysis_report.segmentation_analysis.regions_detected > 0 %}
+                <div class="metric-card">
+                    <div class="metric-value">{{ analysis_report.segmentation_analysis.regions_detected }}</div>
+                    <div class="metric-label">Regions Detected</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">{{ '{:.1f}'.format(analysis_report.segmentation_analysis.forged_percentage) }}%</div>
+                    <div class="metric-label">Image Affected</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Visual Analysis Results -->
+        <div class="section fade-in">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-images"></i>
+                </div>
+                <h2 class="section-title">Visual Analysis Results</h2>
+            </div>
+            <div class="section-content">
+                <div class="image-grid">
+                    <div class="image-card">
+                        <img src="/static/uploads/{{ filename }}" alt="Original Image" loading="lazy">
+                        <div class="image-card-content">
+                            <h3><i class="fas fa-image"></i> Original Image</h3>
+                            <p>The source image submitted for forgery detection analysis.</p>
+                        </div>
+                    </div>
+                    
+                    {% if mask_path %}
+                    <div class="image-card">
+                        <img src="/static/{{ mask_path }}" alt="Forgery Detection" loading="lazy">
+                        <div class="image-card-content">
+                            <h3><i class="fas fa-eye"></i> Detected Forgeries</h3>
+                            <p>Areas highlighted in red indicate potential tampering or manipulation.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if forged_objects_overlay_path %}
+                    <div class="image-card">
+                        <img src="/static/{{ forged_objects_overlay_path }}" alt="Region Boundaries" loading="lazy">
+                        <div class="image-card-content">
+                            <h3><i class="fas fa-vector-square"></i> Region Boundaries</h3>
+                            <p>Precise bounding boxes around each detected forged region.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if copy_move_path %}
+                    <div class="image-card">
+                        <img src="/static/{{ copy_move_path }}" alt="Copy-Move Analysis" loading="lazy">
+                        <div class="image-card-content">
+                            <h3><i class="fas fa-copy"></i> Copy-Move Detection</h3>
+                            <p>Analysis showing potential copy-move forgery patterns.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if forged_objects_bboxes %}
+                <div class="detection-regions">
+                    <h3><i class="fas fa-crosshairs"></i> Detected Region Details</h3>
+                    <div class="regions-grid">
+                        {% for bbox in forged_objects_bboxes %}
+                        <div class="region-item">
+                            <strong>Region {{ loop.index }}</strong>
+                            <span><i class="fas fa-map-marker-alt"></i> Position: ({{ bbox[0] }}, {{ bbox[1] }})</span>
+                            <span><i class="fas fa-expand-arrows-alt"></i> Size: {{ bbox[2] }} × {{ bbox[3] }} px</span>
+                            <span><i class="fas fa-calculator"></i> Area: {{ '{:,}'.format(bbox[2] * bbox[3]) }} pixels²</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Performance Analytics -->
+        {% if analysis_report %}
+        <div class="section fade-in">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h2 class="section-title">Performance Analytics</h2>
+            </div>
+            <div class="section-content">
+                <div class="timing-section">
+                    <h3><i class="fas fa-stopwatch"></i> Processing Time Breakdown</h3>
+                    {% set max_time = [
+                        analysis_report.technical_details.processing_breakdown.classification_time,
+                        analysis_report.technical_details.processing_breakdown.segmentation_time,
+                        analysis_report.technical_details.processing_breakdown.post_processing_time,
+                        analysis_report.technical_details.processing_breakdown.copy_move_time
+                    ] | max %}
+                    
+                    <div class="timing-item">
+                        <div class="timing-label">Classification</div>
+                        <div class="timing-bar">
+                            <div class="timing-fill classification" style="width: {{ '{:.1f}'.format((analysis_report.technical_details.processing_breakdown.classification_time / max_time) * 100) }}%"></div>
+                        </div>
+                        <div class="timing-value">{{ '{:.3f}'.format(analysis_report.technical_details.processing_breakdown.classification_time) }}s</div>
+                    </div>
+                    
+                    <div class="timing-item">
+                        <div class="timing-label">Segmentation</div>
+                        <div class="timing-bar">
+                            <div class="timing-fill segmentation" style="width: {{ '{:.1f}'.format((analysis_report.technical_details.processing_breakdown.segmentation_time / max_time) * 100) }}%"></div>
+                        </div>
+                        <div class="timing-value">{{ '{:.3f}'.format(analysis_report.technical_details.processing_breakdown.segmentation_time) }}s</div>
+                    </div>
+                    
+                    <div class="timing-item">
+                        <div class="timing-label">Post-processing</div>
+                        <div class="timing-bar">
+                            <div class="timing-fill post-processing" style="width: {{ '{:.1f}'.format((analysis_report.technical_details.processing_breakdown.post_processing_time / max_time) * 100) }}%"></div>
+                        </div>
+                        <div class="timing-value">{{ '{:.3f}'.format(analysis_report.technical_details.processing_breakdown.post_processing_time) }}s</div>
+                    </div>
+                    
+                    <div class="timing-item">
+                        <div class="timing-label">Copy-Move</div>
+                        <div class="timing-bar">
+                            <div class="timing-fill copy-move" style="width: {{ '{:.1f}'.format((analysis_report.technical_details.processing_breakdown.copy_move_time / max_time) * 100) }}%"></div>
+                        </div>
+                        <div class="timing-value">{{ '{:.3f}'.format(analysis_report.technical_details.processing_breakdown.copy_move_time) }}s</div>
+                    </div>
+                </div>
+            </div>
         </div>
         {% endif %}
+
+        <!-- Forensic Analysis -->
+        {% if analysis_report and analysis_report.forensic_analysis %}
+        <div class="section fade-in">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-microscope"></i>
+                </div>
+                <h2 class="section-title">Forensic Evidence Analysis</h2>
+            </div>
+            <div class="section-content">
+                <div class="forensic-grid">
+                    <div class="forensic-card">
+                        <h4>
+                            <div class="forensic-icon">E</div>
+                            ELA Analysis
+                        </h4>
+                        <p>{{ analysis_report.forensic_analysis.ela_findings }}</p>
+                    </div>
+                    
+                    <div class="forensic-card">
+                        <h4>
+                            <div class="forensic-icon">N</div>
+                            Noise Analysis
+                        </h4>
+                        <p>{{ analysis_report.forensic_analysis.noise_findings }}</p>
+                    </div>
+                    
+                    <div class="forensic-card">
+                        <h4>
+                            <div class="forensic-icon">G</div>
+                            Gradient Analysis
+                        </h4>
+                        <p>{{ analysis_report.forensic_analysis.gradient_findings }}</p>
+                    </div>
+                    
+                    <div class="forensic-card">
+                        <h4>
+                            <div class="forensic-icon">T</div>
+                            Texture Analysis
+                        </h4>
+                        <p>{{ analysis_report.forensic_analysis.texture_findings }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Technical Analysis -->
+        {% if analysis_report %}
+        <div class="section fade-in">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <h2 class="section-title">Technical Analysis</h2>
+            </div>
+            <div class="section-content">
+                <div class="analysis-grid">
+                    <div class="analysis-card">
+                        <h4><i class="fas fa-brain"></i> Classification Analysis</h4>
+                        <p><strong>Prediction:</strong> {{ analysis_report.classification_analysis.prediction | title }}</p>
+                        <p><strong>Confidence:</strong> {{ '{:.4f}'.format(analysis_report.classification_analysis.confidence) }}</p>
+                        <p><strong>Interpretation:</strong> {{ analysis_report.classification_analysis.confidence_interpretation }}</p>
+                    </div>
+                    
+                    {% if analysis_report.segmentation_analysis.regions_detected > 0 %}
+                    <div class="analysis-card">
+                        <h4><i class="fas fa-puzzle-piece"></i> Segmentation Quality</h4>
+                        <p><strong>Quality:</strong> {{ analysis_report.segmentation_analysis.segmentation_quality }}</p>
+                        <p><strong>Affected Area:</strong> {{ '{:.2f}'.format(analysis_report.segmentation_analysis.forged_percentage) }}%</p>
+                        <p>{{ analysis_report.segmentation_analysis.regions_detected }} distinct regions detected with average size of {{ '{:.0f}'.format(analysis_report.segmentation_analysis.average_region_size) }} pixels.</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if analysis_report.technical_details.model_performance %}
+                    <div class="analysis-card">
+                        <h4><i class="fas fa-tachometer-alt"></i> Model Performance</h4>
+                        <p><strong>Efficiency Score:</strong> {{ '{:.3f}'.format(analysis_report.technical_details.model_performance.efficiency_score) }}</p>
+                        <p><strong>Detection Accuracy:</strong> {{ '{:.3f}'.format(analysis_report.technical_details.model_performance.detection_accuracy) }}</p>
+                        <p><strong>Overall Score:</strong> {{ '{:.3f}'.format(analysis_report.technical_details.model_performance.overall_score) }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="analysis-card">
+                        <h4><i class="fas fa-info-circle"></i> Processing Summary</h4>
+                        <p><strong>Total Time:</strong> {{ '{:.3f}'.format(analysis_report.image_info.processing_time) }}s</p>
+                        <p><strong>Image Format:</strong> {{ filename.split('.')[-1].upper() }}</p>
+                        <p>Comprehensive analysis completed with multi-scale inference and enhanced post-processing.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Performance Charts -->
+        {% if analytics_charts %}
+        <div class="section fade-in">
+            <div class="section-header">
+                <div class="section-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h2 class="section-title">Performance Charts</h2>
+            </div>
+            <div class="section-content">
+                <div class="image-grid">
+                    {% if analytics_charts.performance %}
+                    <div class="image-card">
+                        <img src="/static/{{ analytics_charts.performance }}" alt="Performance Chart" loading="lazy">
+                        <div class="image-card-content">
+                            <h3><i class="fas fa-chart-pie"></i> Performance Overview</h3>
+                            <p>Comprehensive performance metrics and timing analysis.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recommendations -->
+        {% if analysis_report and analysis_report.recommendations %}
+        <div class="recommendations fade-in">
+            <h3><i class="fas fa-lightbulb"></i> Expert Recommendations</h3>
+            <ul class="recommendation-list">
+                {% for recommendation in analysis_report.recommendations %}
+                <li>{{ recommendation }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Back Button -->
+        <div class="back-button">
+            <a href="/" class="btn">
+                <i class="fas fa-arrow-left"></i>
+                Analyze Another Image
+            </a>
+        </div>
     </div>
 
-    <div class="back-button">
-        <a href="/">Try Another Image</a>
-    </div>
-</body>
-</html>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate confidence bar
+            setTimeout(() => {
+                const confidenceFill = document.querySelector('.confidence-fill');
+                if (confidenceFill) {
+                    confidenceFill.style.width = confidenceFill.getAttribute('style').match(/width:\s*([^;]+)/)[1];
+                }
+            }, 500);
+            
+            // Animate timing bars
+            setTimeout(() => {
+                const timingFills = document.querySelectorAll('.timing-fill');
+                timingFills.forEach((fill, index) => {
+                    setTimeout(() => {
+                        fill.style.width = fill.getAttribute('style').match(/width:\s*([^;]+)/)[1];
+                    }, index * 200);
+                });
+            }, 1000);
+            
+            // Add intersection observer for animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+            
+            const observer = new IntersectionObserver((entries)
