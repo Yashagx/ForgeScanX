@@ -372,19 +372,6 @@ python evaluate.py --dataset custom --data_path /path/to/data
 
 ## 🤝 Contributing
 
-We welcome contributions from the research community! Please follow these guidelines:
-
-### Development Setup
-```bash
-# Install development dependencies
-pip install -r requirements-dev.txt
-
-# Install pre-commit hooks
-pre-commit install
-
-# Run code formatting
-black . && isort .
-```
 
 ### Contribution Types
 - **Bug Reports**: Use GitHub issues with detailed reproduction steps
@@ -396,15 +383,6 @@ black . && isort .
 
 ## 📚 Citations & References
 
-### Primary Citation
-```bibtex
-@article{forgescanx2024,
-  title={ForgeScanX: Multi-Modal Deep Learning Framework for Image Forgery Detection and Localization with Enhanced Forensic Feature Analysis},
-  author={Your Name},
-  journal={arXiv preprint arXiv:2024.xxxxx},
-  year={2024}
-}
-```
 
 ### Related Work
 ```bibtex
